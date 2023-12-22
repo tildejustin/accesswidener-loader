@@ -15,9 +15,8 @@ public final class AccessWidenerTinyRemapper implements AccessWidenerVisitor {
         this.fromNamespaceId = tree.getNamespaceId(fromNamespace);
         this.toNamespaceId = tree.getNamespaceId(toNamespace);
         this.tree = tree;
-        if (fromNamespaceId == MappingTreeView.NULL_NAMESPACE_ID || toNamespaceId == MappingTreeView.NULL_NAMESPACE_ID) {
+        if (fromNamespaceId == MappingTreeView.NULL_NAMESPACE_ID || toNamespaceId == MappingTreeView.NULL_NAMESPACE_ID)
             throw new IllegalStateException("mappings do not contain necessary namespace, cannot remap accesswidener (you likely need to use merged mappings)");
-        }
     }
 
     public void visitClass(String name, AccessWidenerReader.AccessType access, boolean transitive) {
@@ -37,10 +36,8 @@ public final class AccessWidenerTinyRemapper implements AccessWidenerVisitor {
     }
 
     public void visitHeader(String namespace) {
-        if (fromNamespaceId != tree.getNamespaceId(namespace)) {
+        if (fromNamespaceId != tree.getNamespaceId(namespace))
             throw new IllegalArgumentException("Cannot remap access widener from namespace '" + namespace + "'. Expected: '" + fromNamespaceId + "'");
-        } else {
-            delegate.visitHeader(tree.getNamespaceName(toNamespaceId));
-        }
+        else delegate.visitHeader(tree.getNamespaceName(toNamespaceId));
     }
 }
