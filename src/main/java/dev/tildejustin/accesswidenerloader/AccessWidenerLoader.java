@@ -17,7 +17,8 @@ public class AccessWidenerLoader {
     static List<Path> accessWideners;
     static FabricLauncher launcher = FabricLauncherBase.getLauncher();
     static String currNamespace = launcher.getTargetNamespace();
-    static AccessWidenerReader awReader = new AccessWidenerReader(FabricLoaderImpl.INSTANCE.getAccessWidener());
+    static AccessWidener awAcceptor = FabricLoaderImpl.INSTANCE.getAccessWidener();
+    static AccessWidenerReader awReader = new AccessWidenerReader(awAcceptor);
 
     static {
         try {
@@ -48,20 +49,17 @@ public class AccessWidenerLoader {
 
                         byte[] data = Files.readAllBytes(path);
                         if (!awNamespace.equals(currNamespace))
-                            data = this.remapAw(data, tree, awNamespace, currNamespace);
-
-                        awReader.read(data, currNamespace);
+                            this.remapAw(data, awAcceptor, tree, awNamespace, currNamespace);
+                        else awReader.read(data, currNamespace);
                     } catch (IOException ignored) {
                     }
                 }
         );
     }
 
-    private byte[] remapAw(byte[] data, MappingTree tree, String from, String to) throws IOException {
-        AccessWidenerWriter awWriter = new AccessWidenerWriter();
-        AccessWidenerTinyRemapper awRemapper = new AccessWidenerTinyRemapper(awWriter, tree, from, to);
+    private void remapAw(byte[] data, AccessWidener awAcceptor, MappingTree tree, String from, String to) throws IOException {
+        AccessWidenerTinyRemapper awRemapper = new AccessWidenerTinyRemapper(awAcceptor, tree, from, to);
         AccessWidenerReader accessWidenerReader = new AccessWidenerReader(awRemapper);
         accessWidenerReader.read(data, from);
-        return awWriter.write();
     }
 }
