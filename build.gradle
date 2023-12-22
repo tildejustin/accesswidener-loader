@@ -3,7 +3,7 @@ plugins {
     id "maven-publish"
 }
 
-version = "$mod_version+$target_version"
+version = mod_version
 group = maven_group
 
 base {
@@ -11,17 +11,10 @@ base {
 }
 
 repositories {
-    maven { url "https://s01.oss.sonatype.org/content/repositories/snapshots" }
     maven { url "https://jitpack.io" }
-    // flatDir { dirs "libs" }
 }
 
 loom {
-    decompilers {
-        vineflower {
-            options.putAll(["mark-corresponding-synthetics": "1", "ind": "    "])
-        }
-    }
     runConfigs.configureEach {
         ideConfigGenerated = false
     }
@@ -29,7 +22,7 @@ loom {
 
 dependencies {
     minecraft libs.minecraft
-    mappings variantOf(libs.yarn.mappings) { classifier "" } // v2 for non-Jitpack mappings
+    mappings variantOf(libs.yarn.mappings) { classifier "" }
     modImplementation libs.fabric.loader
     vineflowerDecompilerClasspath libs.vineflower
 }
@@ -47,7 +40,6 @@ tasks.withType(JavaCompile).configureEach {
 
 java {
     sourceCompatibility = targetCompatibility = JavaVersion.VERSION_1_8
-    // withSourcesJar()
 }
 
 jar {

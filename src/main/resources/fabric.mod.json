@@ -1,24 +1,22 @@
 {
   "schemaVersion": 1,
-  "id": "modid",
+  "id": "accesswidener-loader",
   "version": "${version}",
-  "name": "",
-  "description": "",
+  "name": "AccessWidener Loader",
+  "description": " remaps and loads provided accesswideners",
   "authors": [
     "tildejustin"
   ],
   "contact": {
-    "homepage": "https://modrinth.com/mod/modid",
-    "sources": "https://github.com/tildejustin/modid",
-    "issues": "https://github.com/tildejustin/modid/issues"
+    "homepage": "https://modrinth.com/mod/accesswidener-loader",
+    "sources": "https://github.com/tildejustin/accesswidener-loader",
+    "issues": "https://github.com/tildejustin/modid/accesswidener-loader"
   },
   "license": "MIT",
   "environment": "*",
-  "mixins": [
-    "modid.mixins.json"
-  ],
-  "depends": {
-    "minecraft": "*",
-    "fabric-loader": ">=0.15.0"
+  "entrypoints": {
+    "preLaunch": [
+      "dev.tildejustin.accesswidenerloader.AccessWidenerLoader::load"
+    ]
   }
 }
