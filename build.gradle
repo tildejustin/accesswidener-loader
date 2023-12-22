@@ -25,6 +25,7 @@ dependencies {
     mappings variantOf(libs.yarn.mappings) { classifier "" }
     modImplementation libs.fabric.loader
     vineflowerDecompilerClasspath libs.vineflower
+    include(implementation "net.fabricmc:mapping-io:0.5.1")
 }
 
 processResources {

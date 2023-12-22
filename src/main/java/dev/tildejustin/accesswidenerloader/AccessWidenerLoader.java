@@ -4,33 +4,26 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.impl.FabricLoaderImpl;
 import net.fabricmc.loader.impl.launch.*;
 import net.fabricmc.loader.impl.lib.accesswidener.*;
-import net.fabricmc.loader.impl.lib.tinyremapper.TinyRemapper;
-import net.fabricmc.loader.impl.util.mappings.TinyRemapperMappingsHelper;
-import org.objectweb.asm.commons.Remapper;
+import net.fabricmc.mappingio.MappingReader;
+import net.fabricmc.mappingio.tree.*;
 
 import java.io.*;
-import java.lang.reflect.Constructor;
 import java.nio.file.*;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("DataFlowIssue")
 public class AccessWidenerLoader {
-    static Path awFolder = FabricLoader.getInstance().getConfigDir().resolve("accesswidener");
+    static Path awFolder = FabricLoader.getInstance().getConfigDir().resolve("accesswideners");
     static List<Path> accessWideners;
     static FabricLauncher launcher = FabricLauncherBase.getLauncher();
-    static TinyRemapper remapper = TinyRemapper.newRemapper()
-            .withMappings(TinyRemapperMappingsHelper.create(launcher.getMappingConfiguration().getMappings(), "named", "intermediary"))
-            .renameInvalidLocals(false)
-            .build();
     static String currNamespace = launcher.getTargetNamespace();
-    static AccessWidener aw = new AccessWidener();
-    static AccessWidenerReader awReader = new AccessWidenerReader(aw);
+    static AccessWidenerReader awReader = new AccessWidenerReader(FabricLoaderImpl.INSTANCE.getAccessWidener());
 
     static {
         try {
             if (!Files.exists(awFolder)) Files.createDirectory(awFolder);
-            accessWideners = Arrays.stream(awFolder.toFile().listFiles()).map(File::toPath).filter(path -> path.endsWith(".accesswidener")).collect(Collectors.toList());
+            accessWideners = Arrays.stream(awFolder.toFile().listFiles()).map(File::toPath).filter(path -> path.toString().endsWith("accesswidener")).collect(Collectors.toList());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -42,58 +35,31 @@ public class AccessWidenerLoader {
         return header[2];
     }
 
-    public void load() {
+    public void load() throws IOException {
+        MemoryMappingTree tree = new MemoryMappingTree();
+        MappingReader.read(new InputStreamReader(FabricLoader.class.getClassLoader().getResource("mappings/mappings.tiny").openStream()), tree);
         accessWideners.forEach(path -> {
                     try (BufferedReader reader = Files.newBufferedReader(path)) {
                         String awNamespace = AccessWidenerLoader.readAwNamespace(reader);
 
-                        AtomicReference<byte[]> data = new AtomicReference<>(Files.readAllBytes(path));
-                        if (!awNamespace.equals(currNamespace)) {
-                            Optional.ofNullable(this.remap(data.get(), remapper.getRemapper(), awNamespace, currNamespace)).ifPresent(data::set);
-                        }
+                        byte[] data = Files.readAllBytes(path);
+                        if (!awNamespace.equals(currNamespace))
+                            data = this.remap(data, tree, awNamespace, currNamespace);
 
-                        awReader.read(data.get(), currNamespace);
-                        new AccessWidenerReader(new AccessWidenerVisitor() {
-                            @Override
-                            public void visitClass(String name, AccessWidenerReader.AccessType access, boolean transitive) {
-                                try {
-                                    Class<?> clazz = Class.forName(name, false, FabricLoader.getInstance().getClass().getClassLoader());
-                                    for (Constructor<?> ctor : clazz.getDeclaredConstructors()) {
-                                        ctor.setAccessible(true);
-
-                                    }
-                                } catch (ClassNotFoundException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-
-                            @Override
-                            public void visitMethod(String owner, String name, String descriptor, AccessWidenerReader.AccessType access, boolean transitive) {
-                                Class<?> clazz = Class.forName()
-                            }
-
-                            @Override
-                            public void visitField(String owner, String name, String descriptor, AccessWidenerReader.AccessType access, boolean transitive) {
-                                AccessWidenerVisitor.super.visitField(owner, name, descriptor, access, transitive);
-                            }
-                        })
+                        awReader.read(data, currNamespace);
                     } catch (IOException ignored) {
                     }
-                    aw.getTargets().forEach(s -> {
-
-                    });
                 }
         );
     }
 
-    private byte[] remap(byte[] data, Remapper remapper, String from, String to) throws IOException {
-        System.out.printf("from: %s, to: %s\n", from, to);
+    private byte[] remap(byte[] data, MappingTree tree, String from, String to) throws IOException {
         AccessWidenerWriter awWriter = new AccessWidenerWriter();
-        AccessWidenerRemapper awRemapper = new AccessWidenerRemapper(awWriter, remapper, from, to);
+        AccessWidenerTinyRemapper awRemapper = new AccessWidenerTinyRemapper(awWriter, tree, from, to);
         AccessWidenerReader accessWidenerReader = new AccessWidenerReader(awRemapper);
         accessWidenerReader.read(data, from);
         byte[] result = awWriter.write();
-        Files.write(awFolder.resolve("debug.accesswidener"), result);
+        Files.write(awFolder.resolve("debug.accesswidener.disabled"), result);
         return result;
     }
 }
