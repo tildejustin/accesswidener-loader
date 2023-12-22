@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "modid",
+  "version": "${version}",
+  "name": "",
+  "description": "",
+  "authors": [
+    "tildejustin"
+  ],
+  "contact": {
+    "homepage": "https://modrinth.com/mod/modid",
+    "sources": "https://github.com/tildejustin/modid",
+    "issues": "https://github.com/tildejustin/modid/issues"
+  },
+  "license": "MIT",
+  "environment": "*",
+  "mixins": [
+    "modid.mixins.json"
+  ],
+  "depends": {
+    "minecraft": "*",
+    "fabric-loader": ">=0.15.0"
+  }
+}
